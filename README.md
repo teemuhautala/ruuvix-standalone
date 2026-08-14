@@ -7,12 +7,15 @@ to an InfluxDB 1.x database, on a schedule. Runs as a Docker container.
 
 BLE scanning goes through the host's own BlueZ stack over D-Bus (via
 `ruuvitag_sensor`'s `bleak` backend), not raw Bluetooth device passthrough.
-That means the container just needs access to the host's D-Bus socket and
-BlueZ setup — it never touches `/dev/` Bluetooth device nodes directly. The
-container runs with `--privileged --network host` mainly to keep this simple
-and match a Bluetooth setup that's been running reliably for a long time; a
-future hardening pass could try narrowing those, since the D-Bus/bleak path
-likely doesn't strictly need them.
+That means the container just needs access to the host's D-Bus socket — it
+never touches `/dev/` Bluetooth device nodes or opens raw sockets itself, so
+it doesn't need `--privileged` or `--network host`. The default setup drops
+all Linux capabilities (`cap_drop: [ALL]`) and runs as an unprivileged
+container user; `--network host`/`--privileged` are kept only as a
+documented, commented-out fallback in `docker-compose.yml` in case some
+environment's D-Bus/BlueZ setup needs the extra access — if scanning finds
+no tags under the default settings, try that fallback before assuming
+something else is wrong.
 
 ## Prerequisites
 
@@ -131,9 +134,9 @@ docker build -t ruuvix .
 docker run -d \
   --name ruuvix \
   --restart unless-stopped \
-  --network host \
   --uts host \
-  --privileged \
+  --cap-drop ALL \
+  --security-opt no-new-privileges:true \
   --user "$(id -u):$(id -g)" \
   -v "$(pwd)/app:/app" \
   -v /var/run/dbus/:/var/run/dbus/:z \
@@ -141,17 +144,28 @@ docker run -d \
   ruuvix --run
 ```
 
-`--network host` and `--uts host` give the container the host's D-Bus access
-and hostname (the latter keeps the InfluxDB `client` tag consistent).
-`--user` avoids root-owned files showing up under `app/`.
+`--uts host` shares the host's hostname (keeps the InfluxDB `client` tag
+consistent — it has nothing to do with privilege). `--cap-drop ALL` and
+`--security-opt no-new-privileges:true` strip the container down to no Linux
+capabilities at all, since BLE scanning happens on the host's `bluetoothd`
+and this container is just a D-Bus client talking to it over the mounted
+socket. `--user` avoids root-owned files showing up under `app/`.
 
 One-off commands (find tags, calibrate, init) work the same way, just with
 `run --rm` instead of `run -d`:
 
 ```bash
-docker run --rm -v "$(pwd)/app:/app" -v /var/run/dbus/:/var/run/dbus/:z \
-  --network host --privileged ruuvix --find
+docker run --rm --cap-drop ALL --security-opt no-new-privileges:true \
+  --user "$(id -u):$(id -g)" \
+  -v "$(pwd)/app:/app" -v /var/run/dbus/:/var/run/dbus/:z \
+  ruuvix --find
 ```
+
+**If scanning finds no tags** under these locked-down settings, your
+environment's D-Bus/BlueZ setup may need more access than this project's own
+test hardware did. Fall back to the previously proven-working, broader
+settings by dropping `--cap-drop`/`--security-opt` and adding back
+`--network host --privileged`.
 
 ## File layout
 

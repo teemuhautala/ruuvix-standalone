@@ -3,14 +3,25 @@ services:
     build: .
     container_name: ruuvix
     restart: unless-stopped
-    network_mode: host
     # keep os.uname()[1] == host hostname, so the InfluxDB "client" tag
     # stays continuous with any pre-existing bare-metal deployment
     uts: host
-    privileged: true
+    # BLE scanning is done by the host's bluetoothd; this container only
+    # ever talks to it as a D-Bus client over the mounted socket below, so
+    # it doesn't need any Linux capabilities or host networking/devices.
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     user: "${PUID:-1000}:${PGID:-1000}"
     volumes:
       - ./app:/app
       - /var/run/dbus/:/var/run/dbus/:z
     environment:
       - RUUVI_BLE_ADAPTER=bleak
+    # Fallback, only if scanning doesn't work under the settings above:
+    # comment out cap_drop/security_opt and uncomment these two lines.
+    # This matches the setup this was migrated from and is known-working,
+    # just broader than what the app should actually need.
+    # network_mode: host
+    # privileged: true
