@@ -1,0 +1,7 @@
+.git
+README.md
+install.sh
+app/*.json
+app/*.properties
+app/*.log
+app/__pycache__/

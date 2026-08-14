@@ -1,0 +1,6 @@
+ruuvitag_sensor==3.1.0
+bleak==1.1.1
+dbus-fast==3.0.0
+influxdb==5.3.2
+reactivex==4.1.0
+ptyprocess==0.7.0 ; platform_system == "Linux"

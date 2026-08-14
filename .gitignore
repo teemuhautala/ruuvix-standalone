@@ -1,0 +1,6 @@
+app/config.json
+app/ruuvi-names.properties
+app/ruuvi-corrections.json
+app/ruuvix.log
+app/__pycache__/
+.env
