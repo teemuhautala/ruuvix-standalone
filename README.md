@@ -20,6 +20,8 @@ something else is wrong.
 ## Prerequisites
 
 - A Linux host with Bluetooth hardware, reachable by RuuviTag(s) nearby.
+- On Raspberry Pi: a Pi 2 or newer (including Zero 2 W), running either
+  64-bit Raspberry Pi OS (`arm64`) or 32-bit Raspberry Pi OS (`arm/v7`).
 - An existing InfluxDB 1.x instance (host:port) you can point this at. This
   project does not bundle or manage InfluxDB itself.
 - `sudo` access (the installer installs Docker and bluez, and edits
@@ -51,6 +53,50 @@ been done.
 
 Non-interactive installs (e.g. scripted provisioning) can pass `-y`/`--yes`
 and set `RUUVIX_INFLUXDB=host:port` to skip prompts.
+
+## Raspberry Pi
+
+No separate Pi Dockerfile is needed. The official Python base image is
+multi-architecture, and this project's Dockerfile handles the one dependency
+that must be compiled on 32-bit ARM. On a Pi, the normal quick start builds
+for the Pi's native architecture automatically:
+
+```bash
+./install.sh
+```
+
+For a manual install, use the same command as on any other host:
+
+```bash
+docker compose up -d --build
+```
+
+The first 32-bit build can take several minutes because `dbus-fast` must be
+compiled. The compiler is removed from the finished image. On 64-bit Pi OS,
+pip uses the published ARM64 wheel instead.
+
+To build Pi images on another machine, use a Buildx builder with emulation
+enabled. `--push` is required for a multi-platform result because the normal
+Docker image store cannot load a manifest containing multiple architectures:
+
+```bash
+docker buildx build \
+  --platform linux/arm64,linux/arm/v7 \
+  -t your-dockerhub-user/ruuvix:latest \
+  --push .
+```
+
+To publish one tag that also retains the existing PC image, include amd64:
+
+```bash
+docker buildx build \
+  --platform linux/amd64,linux/arm64,linux/arm/v7 \
+  -t your-dockerhub-user/ruuvix:latest \
+  --push .
+```
+
+The original Pi Zero and Pi 1 use ARMv6 and are not included in the supported
+platforms. Pi Zero 2 W and Pi 2 or newer are supported.
 
 ## Configuring your tags
 

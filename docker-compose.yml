@@ -1,5 +1,7 @@
 services:
   ruuvix:
+    # The Dockerfile supports amd64, Raspberry Pi 64-bit (arm64), and
+    # Raspberry Pi 32-bit (arm/v7). A native build selects the host platform.
     build: .
     container_name: ruuvix
     restart: unless-stopped

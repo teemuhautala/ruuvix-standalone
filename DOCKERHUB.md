@@ -65,7 +65,11 @@ needs it).
 
 ## Tags
 
-- `latest` — tracks the `main` branch of the GitHub repo.
+- `latest` — tracks the `main` branch of the GitHub repo. Publish this as a
+  multi-platform image for `linux/amd64`, `linux/arm64` (64-bit Raspberry Pi
+  OS), and `linux/arm/v7` (32-bit Raspberry Pi OS); Docker will then pull the
+  matching variant automatically. See the repository README for the Buildx
+  command.
 
 ## Source
 
