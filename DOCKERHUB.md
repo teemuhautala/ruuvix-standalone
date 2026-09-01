@@ -26,7 +26,9 @@ curl -fsSL https://raw.githubusercontent.com/teemuhautala/ruuvix-standalone/main
 curl -fsSL https://raw.githubusercontent.com/teemuhautala/ruuvix-standalone/main/app/ruuvi-corrections.json.example -o app/ruuvi-corrections.json
 ```
 
-Edit `app/config.json` to point `influxdb` at your `host:port`, then:
+Edit `app/config.json` to point `influxdb` at your `host:port` — both parts
+required, no `http://` scheme and no trailing `/` (e.g. `192.168.1.10:8086`,
+not `192.168.1.10` or `http://192.168.1.10:8086/`) — then:
 
 ```bash
 docker pull dreamr/ruuvix

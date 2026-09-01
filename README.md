@@ -143,11 +143,20 @@ docker compose restart      # apply config changes
 docker compose down         # stop
 ```
 
+To update to the latest code, pull and restart (or rebuild if
+`Dockerfile`/`requirements.txt` changed):
+
+```bash
+git pull
+docker compose restart          # app/ is bind-mounted, no rebuild needed...
+docker compose up -d --build    # ...unless Dockerfile or requirements.txt changed
+```
+
 `app/config.json` fields:
 
 | field | meaning |
 |---|---|
-| `influxdb` | `host:port` of your InfluxDB instance |
+| `influxdb` | `host:port` of your InfluxDB instance — both parts required, no `http://` scheme and no trailing `/` (e.g. `192.168.1.10:8086`, not `192.168.1.10` or `http://192.168.1.10:8086/`) |
 | `scan_rate` | seconds between measurements |
 | `retention` | InfluxDB retention policy duration, e.g. `53w` |
 | `debug` | verbose logging |
@@ -212,6 +221,24 @@ environment's D-Bus/BlueZ setup may need more access than this project's own
 test hardware did. Fall back to the previously proven-working, broader
 settings by dropping `--cap-drop`/`--security-opt` and adding back
 `--network host --privileged`.
+
+## Troubleshooting
+
+**`ERROR - (<class 'ValueError'>, '...', 'ruuvix.py', <line>)`** — most often a
+malformed `app/config.json`, in particular `influxdb` missing its `:port` or
+carrying an `http://` scheme/trailing slash it shouldn't have (see the config
+table above). The error tuple names the exception type, its message, the
+file, and the line where it actually happened, so it should point straight at
+the bad value.
+
+**Scanning finds no tags** — see [How it works](#how-it-works) above for the
+`--privileged --network host` fallback.
+
+**A fix doesn't seem to apply on the Pi** — confirm the Pi is actually running
+the code you think it is: `git status`/`git log -1` on the Pi, then `git
+pull` and restart (see [Operating](#operating)). It's easy to edit/commit on
+a dev machine and forget the Pi is a separate checkout that needs its own
+pull.
 
 ## File layout
 
