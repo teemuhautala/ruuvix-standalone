@@ -115,7 +115,10 @@ fi
 
 if [[ "$NEW_CONFIG" -eq 1 ]]; then
   INFLUXDB_HOST="${RUUVIX_INFLUXDB:-}"
-  while [[ -z "$INFLUXDB_HOST" ]]; do
+  while [[ ! "$INFLUXDB_HOST" =~ ^[^:[:space:]]+:[0-9]+$ ]]; do
+    if [[ -n "$INFLUXDB_HOST" ]]; then
+      echo "Invalid format, expected host:port (e.g. 192.168.1.10:8086), got: $INFLUXDB_HOST"
+    fi
     read -r -p "InfluxDB host:port (e.g. 192.168.1.10:8086): " INFLUXDB_HOST < /dev/tty
   done
   python3 - "$INFLUXDB_HOST" <<'EOF'
