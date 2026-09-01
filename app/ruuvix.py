@@ -104,8 +104,11 @@ def sigterm_handler(_signo, _stack_frame):
 
 def format_exception():
   exc_type, exc_obj, exc_tb = sys.exc_info()
+  # walk to the innermost frame, i.e. where the error actually occurred
+  while exc_tb.tb_next is not None:
+    exc_tb = exc_tb.tb_next
   fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-  return exc_type, fname, exc_tb.tb_lineno
+  return exc_type, str(exc_obj), fname, exc_tb.tb_lineno
 
 
 def is_bt_in_progress_error(exc):
@@ -337,7 +340,7 @@ def scan():
     else:
       logger.info("Got 0 data points during scan")
   except:
-    logger.error(sys.exc_info())
+    logger.error(format_exception())
   finally:
     release_bt()
 
@@ -535,7 +538,7 @@ def run():
         data_points = scan()
         write_data(data_points)
       except Exception as e:
-        logger.error(sys.exc_info())
+        logger.error(format_exception())
   finally:
     logger.info("Quitting")
 
